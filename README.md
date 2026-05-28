@@ -56,6 +56,11 @@ The summary fields use Health Connect's aggregate API. This helps avoid common
 mistakes such as summing raw records across UTC boundaries or overlapping
 records.
 
+Daily summaries prefer the wearable/app source when it is present, currently
+Fitbit first, then Google Fit/Health sources. This prevents phone step records
+and wearable step records from being mixed together when the goal is to match
+the visible Fitbit/Google Health card.
+
 The raw records remain available for deeper analysis, source checks, and timing
 details.
 
@@ -117,6 +122,8 @@ Key summary fields:
 - hrv_rmssd.min_ms
 - hrv_rmssd.max_ms
 - hrv_rmssd.sample_count
+- selected_summary_origin
+- all_sources_audit
 - summary_data_origins
 - granted_permissions
 - extraction_errors
@@ -147,6 +154,8 @@ Metadata:
 When comparing with Fitbit or Google Health screenshots:
 - Match local dates, not UTC dates.
 - Prefer summary fields for steps, distance, calories, sleep duration, and resting HR.
+- If selected_summary_origin is present, use those summary fields for card comparison.
+- Treat all_sources_audit as debugging information, not the user-facing total.
 - Use hrv_rmssd.median_ms for HRV card comparison.
 - Use sleep.start_local and sleep.end_local for sleep schedule comparison.
 
@@ -198,3 +207,11 @@ See [SETUP.md](SETUP.md) for setup, build, install, and usage instructions.
 
 GitHub Actions can build a debug APK from source and upload it as a workflow
 artifact. Tagged releases publish `HealthSync.apk` for direct download.
+
+## Background Sync Reliability
+
+Auto sync uses WorkManager and runs sync as foreground data-sync work so Android
+is less likely to kill the job mid-export. When auto sync is enabled, the app
+also triggers one immediate sync, asks for notification permission where needed,
+and requests battery-optimization exemption. Android can still delay periodic
+work, but these settings reduce stale Drive data.

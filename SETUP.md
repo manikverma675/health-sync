@@ -21,6 +21,11 @@ This is intentional because aggregate totals are safer for steps, distance,
 calories, sleep duration, and other daily totals than manually summing raw
 records.
 
+For daily card comparison, the app prefers the wearable/app source when present
+instead of mixing every Health Connect origin. Fitbit is preferred first, then
+Google Fit/Health sources. This helps steps match the visible Fitbit/Google
+Health app instead of adding phone and wearable step streams together.
+
 ## Privacy Notes
 
 Do not commit any of these:
@@ -98,7 +103,11 @@ Auto sync uses Android WorkManager.
 
 - It requests a background sync about every 15 minutes.
 - Android may delay it for battery or system scheduling reasons.
+- It runs as foreground data-sync work while exporting.
 - It updates the same selected `health_data.json` file.
+- When enabled, the app also runs one immediate sync.
+- The app may ask for notification permission and battery optimization
+  exemption so Android is less likely to kill sync in the background.
 - If the app is reinstalled, the Drive file and Health Connect permissions must
   be connected again.
 

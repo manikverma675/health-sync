@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
+import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
@@ -44,7 +45,11 @@ data class HealthSnapshot(
     val hrvRmssdMinMs: Double?,
     val hrvRmssdMaxMs: Double?,
     val hrvRmssdSampleCount: Int,
+    val selectedSummaryOrigin: String?,
     val summaryDataOrigins: List<String>,
+    val allSourcesSteps: Long?,
+    val allSourcesDistanceMeters: Long?,
+    val allSourcesCaloriesTotal: Long?,
     val rawRecords: Map<String, List<Map<String, Any?>>>,
     val extractionErrors: Map<String, String>
 )
@@ -206,7 +211,11 @@ class HealthConnectManager(private val context: Context) {
             hrvRmssdMinMs = hrv?.minMs,
             hrvRmssdMaxMs = hrv?.maxMs,
             hrvRmssdSampleCount = hrv?.sampleCount ?: 0,
+            selectedSummaryOrigin = summary?.selectedOrigin,
             summaryDataOrigins = summary?.dataOrigins.orEmpty(),
+            allSourcesSteps = summary?.allSourcesSteps,
+            allSourcesDistanceMeters = summary?.allSourcesDistanceMeters,
+            allSourcesCaloriesTotal = summary?.allSourcesCaloriesTotal,
             rawRecords = export.records,
             extractionErrors = export.errors
         )
@@ -229,25 +238,21 @@ class HealthConnectManager(private val context: Context) {
         val distanceMeters: Long?,
         val exerciseMinutes: Long?,
         val sleepDurationMinutes: Long?,
-        val dataOrigins: List<String>
+        val selectedOrigin: String?,
+        val dataOrigins: List<String>,
+        val allSourcesSteps: Long?,
+        val allSourcesDistanceMeters: Long?,
+        val allSourcesCaloriesTotal: Long?
     )
 
     private suspend fun readDailySummary(range: TimeRangeFilter): DailySummary {
-        val result = client.aggregate(
-            AggregateRequest(
-                metrics = setOf(
-                    StepsRecord.COUNT_TOTAL,
-                    ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL,
-                    TotalCaloriesBurnedRecord.ENERGY_TOTAL,
-                    HeartRateRecord.BPM_AVG,
-                    RestingHeartRateRecord.BPM_AVG,
-                    DistanceRecord.DISTANCE_TOTAL,
-                    ExerciseSessionRecord.EXERCISE_DURATION_TOTAL,
-                    SleepSessionRecord.SLEEP_DURATION_TOTAL,
-                ),
-                timeRangeFilter = range,
-            )
-        )
+        val allSourcesResult = aggregateDailyMetrics(range, emptySet())
+        val selectedOrigin = chooseSummaryOrigin(range, allSourcesResult.dataOrigins)
+        val result = if (selectedOrigin != null) {
+            aggregateDailyMetrics(range, setOf(DataOrigin(selectedOrigin)))
+        } else {
+            allSourcesResult
+        }
 
         return DailySummary(
             steps = result[StepsRecord.COUNT_TOTAL],
@@ -264,10 +269,55 @@ class HealthConnectManager(private val context: Context) {
                 ?.toMinutes(),
             sleepDurationMinutes = result[SleepSessionRecord.SLEEP_DURATION_TOTAL]
                 ?.toMinutes(),
+            selectedOrigin = selectedOrigin,
             dataOrigins = result.dataOrigins
                 .map { it.packageName }
-                .sorted()
+                .sorted(),
+            allSourcesSteps = allSourcesResult[StepsRecord.COUNT_TOTAL],
+            allSourcesDistanceMeters = allSourcesResult[DistanceRecord.DISTANCE_TOTAL]
+                ?.inMeters
+                ?.toLong(),
+            allSourcesCaloriesTotal = allSourcesResult[TotalCaloriesBurnedRecord.ENERGY_TOTAL]
+                ?.inKilocalories
+                ?.toLong()
         )
+    }
+
+    private suspend fun aggregateDailyMetrics(
+        range: TimeRangeFilter,
+        dataOrigins: Set<DataOrigin>
+    ) = client.aggregate(
+            AggregateRequest(
+                metrics = setOf(
+                    StepsRecord.COUNT_TOTAL,
+                    ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL,
+                    TotalCaloriesBurnedRecord.ENERGY_TOTAL,
+                    HeartRateRecord.BPM_AVG,
+                    RestingHeartRateRecord.BPM_AVG,
+                    DistanceRecord.DISTANCE_TOTAL,
+                    ExerciseSessionRecord.EXERCISE_DURATION_TOTAL,
+                    SleepSessionRecord.SLEEP_DURATION_TOTAL,
+                ),
+                timeRangeFilter = range,
+                dataOriginFilter = dataOrigins,
+            )
+        )
+
+    private suspend fun chooseSummaryOrigin(
+        range: TimeRangeFilter,
+        availableOrigins: Set<DataOrigin>
+    ): String? {
+        val availablePackages = availableOrigins.map { it.packageName }.toSet()
+        val preferred = PREFERRED_DAILY_SUMMARY_ORIGINS.firstOrNull { it in availablePackages }
+        if (preferred != null && originHasSteps(range, preferred)) return preferred
+
+        val originsWithSteps = availablePackages.filter { originHasSteps(range, it) }
+        return if (originsWithSteps.size == 1) originsWithSteps.first() else null
+    }
+
+    private suspend fun originHasSteps(range: TimeRangeFilter, packageName: String): Boolean {
+        val result = aggregateDailyMetrics(range, setOf(DataOrigin(packageName)))
+        return (result[StepsRecord.COUNT_TOTAL] ?: 0L) > 0L
     }
 
     data class RawExport(
@@ -485,5 +535,10 @@ class HealthConnectManager(private val context: Context) {
         private const val PAGE_SIZE = 500
         private const val MAX_RECORDS_PER_TYPE = 2_000
         private const val MAX_SERIALIZATION_DEPTH = 5
+        private val PREFERRED_DAILY_SUMMARY_ORIGINS = listOf(
+            "com.fitbit.FitbitMobile",
+            "com.google.android.apps.fitness",
+            "com.google.android.apps.healthdata",
+        )
     }
 }
