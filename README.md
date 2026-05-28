@@ -188,6 +188,10 @@ Ignored by default:
 - Gradle build output
 - screenshots and OS metadata
 
+## License
+
+MIT License. See [LICENSE](LICENSE).
+
 ## Build
 
 See [SETUP.md](SETUP.md) for setup, build, install, and usage instructions.
