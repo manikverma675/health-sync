@@ -1,4 +1,4 @@
-# Health Sync
+# Health Sync - Google Fitbit AI Coach Killer
 
 Health Sync is a small Android app for exporting Health Connect data to a
 single JSON file in Google Drive.
