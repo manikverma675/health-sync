@@ -1,0 +1,23 @@
+.DS_Store
+
+# Android build output and local machine config
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+
+# Signing keys and generated artifacts
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Personal health exports and screenshots
+health_data.json
+*.jpeg
+*.jpg
+*.png
+
+# Python/cache leftovers
+__pycache__/
+*.pyc

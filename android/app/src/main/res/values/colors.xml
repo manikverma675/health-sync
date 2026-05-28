@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ink">#172026</color>
+    <color name="muted_ink">#5D6871</color>
+    <color name="paper">#F7FAF8</color>
+    <color name="mint">#DDF5E8</color>
+    <color name="blue">#DDEBFF</color>
+    <color name="coral">#FFE3D8</color>
+    <color name="teal">#147A72</color>
+    <color name="teal_dark">#0D4E4A</color>
+    <color name="drive_blue">#3367D6</color>
+    <color name="sync_green">#1B806A</color>
+    <color name="surface">#FAFFFC</color>
+</resources>
