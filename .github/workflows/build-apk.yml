@@ -31,9 +31,12 @@ jobs:
         working-directory: android
         run: gradle assembleDebug
 
+      - name: Prepare APK asset
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk HealthSync.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HealthSync-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: HealthSync
+          path: HealthSync.apk
           retention-days: 30

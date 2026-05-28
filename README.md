@@ -32,6 +32,18 @@ daily coaching without needing a custom backend or paid health-dashboard layer.
 No backend server is required. No Google OAuth client is required. No API keys
 are stored in the app.
 
+## Download APK
+
+Download the latest installable APK from GitHub Releases:
+
+```text
+https://github.com/manikverma675/health-sync/releases/latest/download/HealthSync.apk
+```
+
+This is a universal debug-signed APK intended for sideloading. It works on
+Android 8.0+ phones, but Health Connect data export requires Health Connect to
+be available on the device and permissions to be granted by the user.
+
 ## Data Model
 
 The exported file has three top-level sections:
@@ -181,4 +193,4 @@ Ignored by default:
 See [SETUP.md](SETUP.md) for setup, build, install, and usage instructions.
 
 GitHub Actions can build a debug APK from source and upload it as a workflow
-artifact.
+artifact. Tagged releases publish `HealthSync.apk` for direct download.

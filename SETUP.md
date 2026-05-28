@@ -42,6 +42,26 @@ The repository should contain source code, docs, and build configuration only.
 - Android Studio or command-line Android build tools.
 - JDK 17.
 
+## Download Public APK
+
+The latest public APK is attached to the GitHub Release:
+
+```text
+https://github.com/manikverma675/health-sync/releases/latest/download/HealthSync.apk
+```
+
+This APK is ready for sideloading on Android 8.0+ phones. Health Connect export
+still depends on the phone having Health Connect available and the user granting
+Health Connect permissions.
+
+To install:
+
+1. Download `HealthSync.apk` on your Android phone.
+2. Open the APK.
+3. If Android blocks it, enable **Install unknown apps** for the browser or file
+   manager you used.
+4. Install and open **Health Sync**.
+
 ## Build Locally
 
 From the Android project directory:
